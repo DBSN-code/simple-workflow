@@ -26,6 +26,29 @@ The primary agent is the orchestrator.
 - If the executor discovers unresolved architecture or material ambiguity, it must stop and return evidence to the orchestrator instead of guessing.
 - Avoid multiple coding agents editing the same area in parallel. Parallelism is mainly for genuinely independent work, read-heavy exploration, testing, or review.
 
+## Issue slicing for the executor
+
+When GitHub Issues are used, shape implementation Issues for successful execution by Luna before assigning them.
+
+An implementation Issue should, whenever practical:
+
+- describe one coherent outcome;
+- have material architectural decisions already resolved by the orchestrator;
+- include only the context needed to execute the change without rediscovering the whole project;
+- state clear acceptance criteria;
+- be independently verifiable;
+- state important out-of-scope boundaries when that prevents accidental expansion.
+
+Split an Issue when keeping it whole would force the executor to make material architectural decisions, coordinate multiple loosely coupled outcomes, or repeatedly revisit earlier work because later decisions can invalidate it.
+
+Do not split work just to reduce file count, line count, estimated time, or apparent task size. Avoid micro-Issues whose coordination/context cost is greater than the implementation itself.
+
+When useful, keep a higher-level parent Issue for the user-visible feature and create implementation Issues beneath it. Titles should describe outcomes in language the user can understand; technical details may live in the Issue body.
+
+Whenever practical, the GitHub Issue itself is the executor task packet. Do not duplicate it into `task.md`, `plan.md`, handoff files, or parallel backlog documents.
+
+If the executor discovers that an Issue is still too broad, ambiguous, or depends on an unresolved architectural decision, it must stop and return the blocker to the orchestrator. The orchestrator decides whether to clarify, re-slice, or change the plan before execution resumes.
+
 ## Review gate
 
 Do not run an independent reviewer for every change.
@@ -59,6 +82,8 @@ Preserve by default:
 Replace or reconcile only workflow/methodology instructions that conflict with Simple Workflow. Never recreate or duplicate durable knowledge merely to fit this workflow.
 
 If an existing AGENTS.md mixes technical project truth with old orchestration rules, preserve the technical truth and replace only the conflicting orchestration section.
+
+Existing Issues are preserved. Re-slice only an Issue that still has unfinished implementation work and is too broad or ambiguous for the executor; do not rewrite completed/history-only Issues just to match the workflow.
 
 ## Context discipline
 
