@@ -38,7 +38,7 @@ ok "Agentes executor (Luna xhigh) e reviewer (Terra high) instalados"
 
 # -----------------------------------------------------------------------------
 # 3. Codex config.toml
-#    Preserve unrelated config, replace only Simple Workflow model/effort keys
+#    Preserve unrelated config. Replace only root-level Simple Workflow keys
 #    and the optional [profiles.astra] table.
 # -----------------------------------------------------------------------------
 CONFIG="$CODEX_HOME/config.toml"
@@ -52,7 +52,7 @@ else
 fi
 
 awk '
-BEGIN { in_astra=0; defaults_written=0 }
+BEGIN { in_astra=0; in_root=1; defaults_written=0 }
 function defaults() {
   if (!defaults_written) {
     print "# Simple Workflow — managed defaults"
@@ -63,13 +63,13 @@ function defaults() {
     defaults_written=1
   }
 }
-/^[[:space:]]*\[profiles\.astra\][[:space:]]*$/ { in_astra=1; next }
+/^[[:space:]]*\[profiles\.astra\][[:space:]]*$/ { in_astra=1; in_root=0; next }
 in_astra && /^[[:space:]]*\[/ { in_astra=0 }
 in_astra { next }
-/^[[:space:]]*model[[:space:]]*=/ { next }
-/^[[:space:]]*model_reasoning_effort[[:space:]]*=/ { next }
-/^[[:space:]]*plan_mode_reasoning_effort[[:space:]]*=/ { next }
-!defaults_written && /^[[:space:]]*\[/ { defaults() }
+in_root && /^[[:space:]]*model[[:space:]]*=/ { next }
+in_root && /^[[:space:]]*model_reasoning_effort[[:space:]]*=/ { next }
+in_root && /^[[:space:]]*plan_mode_reasoning_effort[[:space:]]*=/ { next }
+in_root && /^[[:space:]]*\[/ { defaults(); in_root=0 }
 { print }
 END { defaults() }
 ' "$CONFIG" > "$TMP_CONFIG"
