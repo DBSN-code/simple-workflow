@@ -27,14 +27,14 @@ ok "Workflow global instalado em $CODEX_HOME/AGENTS.md"
 # -----------------------------------------------------------------------------
 # 2. Custom agents
 # -----------------------------------------------------------------------------
-for agent in executor reviewer; do
+for agent in executor executor_deep reviewer; do
   target="$CODEX_HOME/agents/$agent.toml"
   if [ -f "$target" ]; then
     cp "$target" "$target.backup-$BACKUP_STAMP"
   fi
   cp "$ROOT_DIR/codex/agents/$agent.toml" "$target"
 done
-ok "Agentes executor (Luna xhigh) e reviewer (Terra high) instalados"
+ok "Agentes executor (Luna high), executor_deep (Luna xhigh) e reviewer (Terra high) instalados"
 
 # -----------------------------------------------------------------------------
 # 3. Codex config.toml
@@ -135,7 +135,6 @@ fi
 
 # -----------------------------------------------------------------------------
 # 6. Modern Web Guidance
-#    Official installer may ask which supported agent/location to use.
 # -----------------------------------------------------------------------------
 if command -v npx >/dev/null 2>&1; then
   printf '\n'
@@ -163,4 +162,5 @@ fi
 
 printf '\nInstalação concluída.\n'
 printf 'Feche e abra novamente o Codex para recarregar AGENTS.md, agentes e skills.\n'
-printf 'Padrão: Sol medium; Plan Mode: high. Para arquitetura ambígua no CLI: codex --profile astra\n\n'
+printf 'Padrão: Sol medium; Plan Mode: high; executor: Luna high; executor_deep: Luna xhigh.\n'
+printf 'Para arquitetura ambígua no CLI: codex --profile astra\n\n'
