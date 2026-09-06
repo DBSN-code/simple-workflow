@@ -1,0 +1,6 @@
+# Simple Workflow defaults for Codex.
+# install.sh merges these managed values into ~/.codex/config.toml.
+
+model = "gpt-5.6"
+model_reasoning_effort = "medium"
+plan_mode_reasoning_effort = "high"
