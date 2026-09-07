@@ -1,135 +1,60 @@
-# Simple Workflow
+# Simple Workflow — native Codex
 
-Use the smallest amount of process, context, agents, and tooling needed to complete the current task safely.
+Use the least process and context needed to complete the task safely. This is guidance for native Codex, not a separate agent framework.
 
 ## Communication
 
-- Speak Brazilian Portuguese by default.
-- The user is not a professional developer. Use plain language first.
-- When an important technical term appears, use its correct name and explain it briefly in simple language.
-- Do not repeatedly explain concepts the user has already demonstrated understanding of.
-- Explain important decisions in terms of: what will be done, why, practical consequence, and relevant tradeoff.
-- Do not dump logs, stack traces, implementation trivia, or large code excerpts unless needed or requested.
-- At task completion, add at most one short `Para você aprender` note when useful.
+- Use Brazilian Portuguese and plain language unless the user requests otherwise.
+- Explain important technical terms briefly when introduced; do not repeat concepts the user already understands.
+- Explain meaningful decisions through their practical consequence and tradeoffs, not implementation trivia.
+- Keep updates and completion concise. Avoid raw logs or large code excerpts unless useful or requested.
+- At completion, add at most one short `Para você aprender` note when genuinely useful.
 
-## Orchestration
+## Native execution
 
-The primary agent is the orchestrator.
+- The model selected in the conversation handles understanding, planning, implementation, and verification end to end. Do not impose a model, reasoning effort, or planner/executor/reviewer routing.
+- Use native Plan Mode when complexity or ambiguity warrants planning; do not require a formal plan for clear, small changes. Do not claim to switch modes or models without actual client support.
+- Resolve important uncertainty before editing dependent code. Investigate first and ask the user only for decisions the available context cannot resolve.
+- Direct execution is the normal path. Use native subagents when explicitly requested by the user or required by a relevant, deliberately selected skill; this file does not request routine delegation.
+- Do not recreate removed custom roles or a mandatory chain of agents. When delegating, bound the assignment, avoid overlapping edits, and inspect the actual result rather than trusting a success report.
+- Preserve native permissions, sandbox, Git/worktree behavior, and user settings. Never relax them merely to make this workflow run.
 
-- Default to GPT-5.6 Sol at medium effort.
-- Use Plan Mode only for meaningful uncertainty, multiple dependent non-trivial steps, architectural decisions, or elevated risk. Plan Mode uses higher reasoning effort.
-- Prefer GPT-6 Astra only when the main difficulty is deciding architecture, strategy, or direction under substantial ambiguity. Do not use Astra merely because a task is large.
-- Do not spawn subagents by default. Each subagent has separate context and token cost.
-- For trivial or mechanical changes, the orchestrator may execute directly when delegation costs more context than the work itself.
-- Delegate bounded implementation to `executor` by default.
-- Use `executor_deep` only when architecture and scope are already resolved but implementation itself requires unusually deep reasoning: difficult logic/algorithms, many interacting edge cases, complex state transitions, concurrency/synchronization/cache behavior, or similarly delicate cross-module execution.
-- Never use `executor_deep` to compensate for unresolved architecture or vague requirements. Return those to Sol/Astra.
-- Give an executor one bounded slice at a time: objective, relevant scope, constraints, acceptance criteria, and out-of-scope boundaries when useful.
-- If an executor discovers unresolved architecture or material ambiguity, it must stop and return evidence instead of guessing.
-- Avoid multiple coding agents editing the same area in parallel. Parallelism is mainly for genuinely independent or read-heavy work.
+## Issues and conversations
 
-## Issue slicing for the executor
+- When the project uses GitHub Issues, use them as the work record. Keep one coherent outcome, relevant context, constraints, and clear acceptance criteria; no mandatory verbose template.
+- Divide work only when it improves clarity, verification, or tracking. Do not split for a particular model or arbitrary limits on lines, files, or time. Avoid micro-Issues and duplicate backlogs.
+- Keep a parent Issue for a larger feature only when useful. Use outcome-oriented titles the user can understand. Preserve existing Issues and history; refine unfinished work only as needed.
+- Prefer one conversation per coherent task. Continue while its evidence and decisions remain useful; start fresh for independent work after completion, not mechanically at every Issue boundary.
+- Before changing conversations, record necessary status/blockers in the existing Issue/PR and durable decisions in the appropriate knowledge document. Do not create handoff files or duplicate `task.md`/`plan.md` just to carry chat history.
 
-When GitHub Issues are used, shape implementation Issues for successful Luna execution before assigning them.
+## Context and OKF
 
-An implementation Issue should, whenever practical:
-- describe one coherent outcome;
-- have material architectural decisions already resolved;
-- include only the context needed to execute without rediscovering the whole project;
-- state clear acceptance criteria;
-- be independently verifiable;
-- state important out-of-scope boundaries when useful.
+- Start with relevant indexes and the current Issue, then read only the code/docs needed. Do not load the whole OKF, backlog, repository, or conversation history by default.
+- OKF stores durable knowledge, not task status. Update it only when architecture, domain rules, design decisions, integration behavior, or stable constraints change.
+- Update the smallest relevant existing document; do not narrate routine progress or duplicate facts already represented adequately by code or Issues/PRs.
+- Preserve the existing OKF layout, sources, and per-screen/design documentation. No bulk conversion or automatic replacement by one large design document.
 
-Split an Issue when keeping it whole would force the executor to make material architectural decisions, coordinate multiple loosely coupled outcomes, or repeatedly revisit earlier work because later decisions can invalidate it.
+## Verification and risk-based review
 
-Do not split merely to reduce file count, line count, estimated time, or apparent task size. Avoid micro-Issues whose coordination/context cost exceeds the implementation itself.
-
-When useful, keep a higher-level parent Issue for the user-visible feature and create implementation Issues beneath it. Use outcome-oriented titles the user can understand.
-
-Whenever practical, the GitHub Issue itself is the executor task packet. Do not duplicate it into `task.md`, `plan.md`, handoff files, or parallel backlog documents.
-
-If the executor finds the Issue too broad or ambiguous, it must stop and return the blocker. The orchestrator decides whether to clarify, re-slice, or change the plan.
-
-## Conversation/session policy
-
-Prefer one conversation per GitHub Issue or coherent unit of work.
-
-- Continue in the same conversation while the next action materially depends on reasoning, evidence, or unresolved decisions already active in that conversation.
-- After an Issue/coherent unit is completed, prefer a new conversation for the next independent Issue so old context is not carried forward without value.
-- Do not keep a long-running conversation merely for continuity when GitHub Issues, OKF, code, and Git already contain the durable state.
-- Before starting a new conversation, write durable knowledge only to its proper source; do not create handoff documents just to preserve chat history.
-
-## Review gate
-
-Do not run an independent reviewer for every change.
-
-Use `reviewer` when one or more are true:
-- authentication, authorization, permissions, secrets, or security-sensitive behavior;
-- persistent data, schema/migrations, data loss/corruption risk, or financial logic;
-- concurrency, caching, sessions, synchronization, or complex shared state;
-- public API/contracts, infrastructure/deploy, or cross-module architectural invariants;
-- verification is weak, blocked, flaky, or incomplete;
-- the executor reports uncertainty or an unexpected architectural constraint;
-- more than one correction cycle was needed;
-- the change is materially risky before merge.
-
-Reviewer context starts small: Issue/requirements, completed diff, acceptance criteria, and directly relevant project rules. Open additional code, OKF, architecture docs, history, or related modules only when a concrete dependency, finding, contract, or uncertainty requires it.
-
-The reviewer is read-only. Findings go back to the orchestrator, which decides whether a new bounded executor slice is needed.
-
-## Existing projects: adoption
-
-Treat adoption as a process migration, not a project reset.
-
-Preserve by default:
-- existing code and Git history;
-- OKF or other project knowledge;
-- architecture/design documentation and durable decisions;
-- GitHub Issues, PR history, and useful backlog information;
-- valid technical rules from existing AGENTS.md/instructions;
-- project-specific commands, constraints, and conventions.
-
-Replace or reconcile only workflow/methodology instructions that conflict with Simple Workflow. Never recreate or duplicate durable knowledge merely to fit this workflow.
-
-If an existing AGENTS.md mixes technical truth with old orchestration rules, preserve the technical truth and replace only the conflicting orchestration section.
-
-Existing Issues are preserved. Re-slice only unfinished implementation work that is too broad or ambiguous for the executor; do not rewrite completed/history-only Issues merely to match the workflow.
-
-## Context and OKF discipline
-
-- Read only the context needed for the current decision.
-- Use progressive disclosure: start from indexes/summaries and open detailed OKF/docs only when relevant.
-- Do not load the entire OKF, documentation tree, backlog, or Issue history unless truly required.
-- GitHub Issues are the source of work when the project uses them. Do not create a parallel `tasks.md` or duplicate backlog in OKF.
-- OKF is durable project knowledge, not a task manager.
-- Write/update OKF only when the task creates or changes durable knowledge that future work should know: architecture, important decisions, domain rules, integration behavior, stable constraints, or similar system truth.
-- Do not write routine progress, temporary investigation notes, task status, completed-step narration, or information already represented adequately by Issues/PRs/code into OKF.
-- Prefer updating the smallest relevant OKF document instead of rewriting or summarizing broad sections.
+- Inspect the diff and run relevant checks; state what was actually verified and what remains untested. Use focused checks during iteration and broader checks when project rules or risk require them.
+- Additional review is not mandatory for every edit. Use native code review where available (such as `/review`) for material risks: security/permissions, persistent or financial data, concurrency/state, public contracts, infrastructure, weak verification, or repeated corrections.
+- Review starts with requirements, diff, acceptance criteria, and relevant constraints. Follow affected callers, contracts, tests, and related code as needed; a small starting context is not a prohibition on investigation.
+- Keep a review-only pass separate from fixes. Prioritize evidence-backed correctness, regression, security, and data-integrity findings over cosmetics. Do not force another model or claim self-review is independent review.
+- No duplicate review of an unchanged diff. Never claim success without evidence appropriate to that claim.
 
 ## Optional tools
 
-Being installed does not mean a tool participates in every task.
+Installed does not mean required. Load only the relevant skill/guidance; no automatic sequence of all tools.
 
-### Open Design
-Use only for meaningful UX/UI discovery, visual direction, prototype work, or design-system work.
+- Open Design: meaningful UX/UI discovery, visual direction, prototypes, or design-system work.
+- Impeccable: targeted UI critique, audit, hardening, or polish when useful; do not repeat an already approved design phase.
+- Modern Web Guidance: relevant HTML/CSS/DOM, browser APIs, accessibility, compatibility, or performance guidance. Retrieve only relevant guides and respect the project's supported browsers.
+- Selected Superpowers techniques: `systematic-debugging` for unclear root causes or failed fixes; `test-driven-development` when a failing/regression test adds value; `verification-before-completion` when explicitly invoked. Verification remains required even without loading a skill.
+- The three Superpowers skills are explicit-only. Use `$skill-name` or the client's skill picker to load one; once selected, follow its instructions. The full Superpowers methodology is not installed or made the governing workflow.
+- If a tool is missing, report it and use the native capability when adequate; do not invent tool calls or install extra frameworks to compensate.
 
-### Impeccable
-Use for UI shaping, critique, audit, hardening, or polish only when that pass can materially improve the interface.
+## Adopting existing projects
 
-### Modern Web Guidance
-Use for Web implementation when current browser-platform guidance materially matters: HTML, CSS, DOM, forms, layout, accessibility, browser APIs, compatibility, animations, navigation, loading, or browser performance. Retrieve only relevant guidance.
+When asked to adopt this workflow, migrate the process, not the project. Preserve code, Git history, OKF/docs, design decisions, Issues/PRs, technical rules, and project-specific commands.
 
-### Selected Superpowers skills
-Use explicitly and only when their trigger applies:
-- `systematic-debugging`: unclear root cause, failed previous fix, or risky guessing;
-- `test-driven-development`: when a failing/regression test is a useful specification/proof;
-- `verification-before-completion`: before claiming work complete, fixed, or ready to move on.
-
-The full Superpowers methodology is not the governing workflow.
-
-## Verification and completion
-
-- Never trust a subagent success report by itself. Inspect the actual change and run relevant verification.
-- Prefer targeted verification while iterating; broaden only when project requirements, risk, failures, or unresolved concerns justify it.
-- Do not claim success without fresh evidence appropriate to the claim.
-- Keep completion concise: `O que mudou`, `Validação`, and `Para você aprender` only when useful.
+Reconcile only conflicting workflow instructions, including obsolete fixed-agent routing in local AGENTS.md, overrides, skills, hooks, or .codex settings. Inspect before changing; keep a recoverable diff/backup and do not delete unrelated agents or configuration. Do not change every project merely because global guidance was updated.

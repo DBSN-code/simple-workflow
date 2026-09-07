@@ -1,345 +1,146 @@
 # Simple Workflow for Codex
 
-Um workflow simples, econômico em tokens e reutilizável para executar projetos no Codex — tanto projetos novos quanto projetos que já estão em andamento.
+**Codex nativo + contexto organizado + ferramentas sob demanda + comunicação didática.**
 
-A proposta não é substituir o funcionamento nativo do Codex. O workflow usa as peças que o Codex já oferece (`AGENTS.md`, Plan Mode, subagentes, skills, MCP e Git/GitHub) e adiciona apenas regras claras para escolher **quem planeja, quem executa, quando revisar, quanto contexto carregar e quando usar ferramentas especializadas**.
+Para projetos novos ou em andamento. Você descreve o resultado desejado e o modelo selecionado na conversa entende, planeja quando necessário, implementa e verifica o trabalho. Este repositório adiciona instruções pequenas para organizar esse uso; não cria um framework paralelo.
 
-## Objetivos
+**Não há mais roteamento obrigatório entre Sol/Astra, Luna e Terra.** Não são instalados agentes personalizados nem impostos modelo, esforço de raciocínio ou permissões. Os subagentes nativos continuam disponíveis quando solicitados ou necessários a uma skill escolhida — não como etapa obrigatória de toda tarefa. [Referência oficial](https://developers.openai.com/codex/subagents).
 
-- manter o workflow pequeno e previsível;
-- gastar modelos mais caros apenas onde agregam valor;
-- evitar múltiplos agentes fazendo o mesmo trabalho;
-- carregar ferramentas especializadas somente quando relevantes;
-- preservar contexto e conhecimento existentes em projetos em andamento;
-- usar GitHub Issues como fonte de trabalho, sem backlog paralelo;
-- estruturar Issues para que Luna receba trabalho claro e verificável;
-- usar OKF somente para conhecimento durável;
-- evitar conversas longas carregando contexto que já não ajuda;
-- conversar com o usuário em português e linguagem acessível, ensinando programação gradualmente.
-
-## Modelos
-
-| Papel | Modelo | Esforço | Uso |
-|---|---|---:|---|
-| Orquestrador padrão | GPT-5.6 Sol | Medium | trabalho normal e decisões relativamente claras |
-| Planejamento com Sol | GPT-5.6 Sol | High | Plan Mode e problemas difíceis dentro de arquitetura conhecida |
-| Orquestrador para alta ambiguidade | GPT-6 Astra | Low | arquitetura nova, muitas decisões conectadas ou alta incerteza |
-| Planejamento com Astra | GPT-6 Astra | Medium | Plan Mode em problemas realmente arquiteturais |
-| Executor padrão | GPT-5.6 Luna | High | implementação clara e convencional de uma Issue delimitada |
-| Executor profundo | GPT-5.6 Luna | xhigh | arquitetura decidida, mas implementação local exige raciocínio especialmente difícil |
-| Revisor | GPT-5.6 Terra | High | revisão independente somente quando o risco justificar |
-
-### Regra Sol x Astra
-
-Use **Sol** quando já for possível dizer razoavelmente *o que precisa ser feito e onde a solução vive*.
-
-Use **Astra** quando o principal problema ainda for descobrir *qual arquitetura, direção ou estratégia é a correta*.
-
-Não use Astra apenas porque uma tarefa é grande.
-
-### Regra Luna High x Luna xhigh
-
-**Luna High é o executor padrão.** Use quando a Issue já estiver delimitada e a implementação for convencional: UI comum, CRUD, integração conhecida, refactor localizado, testes normais ou alterações em vários arquivos sem raciocínio particularmente traiçoeiro.
-
-Use **Luna xhigh (`executor_deep`)** somente quando a arquitetura e o escopo já estiverem resolvidos, mas a implementação exigir raciocínio profundo dentro desses limites, por exemplo:
-
-- lógica ou algoritmo delicado;
-- muitos casos-limite interagindo;
-- transições de estado complexas;
-- concorrência, sincronização ou cache;
-- comportamento difícil distribuído entre módulos;
-- risco alto de uma solução aparentemente correta falhar em casos menos óbvios.
-
-Se a dificuldade vier de **arquitetura não resolvida ou requisitos vagos**, não aumente Luna para xhigh. O trabalho volta para Sol/Astra.
+## Como funciona
 
 ```text
-Issue delimitada
-      ↓
-implementação convencional?
-      ├─ sim → Luna High
-      └─ não
-          ↓
-arquitetura já está resolvida?
-      ├─ sim → Luna xhigh
-      └─ não → Sol/Astra
+Você descreve o resultado
+         ↓
+Codex consulta apenas o contexto relevante
+         ↓
+Planeja quando necessário
+         ↓
+Implementa e verifica
+         ↓
+Revisão adicional conforme o risco
+         ↓
+Conclui e registra somente o que precisa permanecer
 ```
 
-## Fluxo principal
+Use o Plan Mode nativo para decisões importantes ou tarefas ambíguas; mudanças claras não precisam de um plano extenso. Use a revisão nativa, como `/review` quando disponível no cliente, para mudanças que justificam um olhar adicional. Uma revisão não implica automaticamente outro modelo. [Boas práticas do Codex](https://developers.openai.com/codex/learn/best-practices).
 
-```text
-Você
-  ↓
-Orquestrador (Sol ou Astra)
-  ↓
-entende intenção + lê apenas contexto necessário
-  ↓
-Plan Mode somente se necessário
-  ↓
-cria/ajusta Issue executável pelo Luna
-  ↓
-Luna High ── ou ── Luna xhigh quando execução exigir
-  ↓
-verificação
-  ↓
-review gate?
-  ├─ não → concluir
-  └─ sim → Terra High (read-only, contexto mínimo primeiro)
-               ↓
-           findings?
-           ├─ não → concluir
-           └─ sim → nova slice → Luna
-```
+Modelo e esforço são escolhas suas no Codex, inclusive durante planejamento. O Simple Workflow não promete trocá-los automaticamente nem exige uma família específica de modelos ou assinatura. Remover a delegação fixa pode reduzir repasses de contexto, mas não garante menor custo total: isso depende do modelo e das tarefas.
 
-Para alterações triviais, mecânicas e de risco muito baixo, o próprio orquestrador pode executar diretamente quando criar um subagente custaria mais contexto do que a mudança.
+## O que permanece
 
-## GitHub Issues pensadas para o Luna
+**GitHub Issues:** trabalho organizado em resultados claros, com contexto, limites e critérios de aceitação. Dividir apenas quando facilitar implementação, verificação ou acompanhamento, sem fragmentar artificialmente para um modelo específico. A própria Issue contém as instruções do trabalho; nenhum backlog paralelo é criado. O acesso ao GitHub precisa estar autenticado no ambiente do usuário; este instalador não fornece credenciais nem configura uma conta GitHub.
 
-O planejamento considera **como o trabalho será executado**, e não apenas descreve a feature em alto nível.
+**OKF:** conhecimento durável do projeto — arquitetura, regras, integrações e decisões, incluindo documentação de design por tela/área. Consulta apenas ao material relevante e atualização apenas quando esse conhecimento mudar. Progresso e status ficam nas Issues/PRs. O OKF existente é preservado, sem conversão ou reescrita em massa. [Especificação OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
 
-Uma Issue está no tamanho certo quando, de forma prática:
+**Conversas:** uma por unidade coerente de trabalho, não uma para o projeto inteiro. Continue enquanto as evidências e decisões anteriores ajudarem; abra outra para trabalho independente. Não é obrigatório trocar de conversa a cada Issue, nem criar um documento de repasse para transportar todo o histórico.
 
-- possui um resultado coerente;
-- as decisões arquiteturais relevantes já foram resolvidas;
-- contém contexto suficiente sem obrigar o executor a redescobrir o projeto inteiro;
-- tem critérios claros de aceitação;
-- pode ser verificada de forma independente;
-- deixa explícito o que está fora de escopo quando isso evita expansão acidental.
+**Verificação e revisão:** conferir a mudança e executar as verificações adequadas antes de declarar sucesso. Revisão adicional para riscos relevantes: segurança, dados persistentes/financeiros, estado complexo, contratos, infraestrutura, verificações insuficientes ou correções repetidas. Começar pelo pedido e pelas alterações, ampliando a leitura quando necessário; não limitar a revisão cegamente ao diff.
 
-Se manter tudo em uma Issue obrigaria Luna a tomar decisões arquiteturais, coordenar resultados pouco relacionados ou refazer trabalho conforme decisões posteriores aparecem, Sol/Astra deve **dividir antes da execução**.
+**Comunicação:** português brasileiro e linguagem acessível. Explicar brevemente termos técnicos importantes, consequências das decisões e, quando útil, um pequeno `Para você aprender` ao concluir. Esse padrão pode ser ajustado por instruções suas; não é preciso conhecer programação para começar.
 
-Não existem limites artificiais por número de arquivos, linhas ou duração. Evite micro-Issues cujo custo de coordenação seja maior que a implementação.
+## Ferramentas disponíveis sob demanda
 
-Quando útil, mantenha uma Issue maior para a feature e Issues menores para implementação:
+| Ferramenta | Quando agrega valor |
+|---|---|
+| [Open Design](https://github.com/nexu-io/open-design) | Direção visual, protótipos, UX/UI e design system. |
+| [Impeccable](https://github.com/pbakaus/impeccable) | Crítica, auditoria e acabamento de interfaces. |
+| [Modern Web Guidance](https://github.com/GoogleChrome/modern-web-guidance) | Orientação pontual sobre HTML/CSS, APIs do navegador, compatibilidade, acessibilidade e performance. |
+| [Superpowers — seleção de três skills](https://github.com/obra/superpowers) | Investigação de bugs, testes antes da correção quando úteis e verificação de conclusão. |
 
-```text
-#200 Open Finance
-├── #201 Conectar uma instituição
-├── #202 Importar contas e saldos
-├── #203 Importar transações
-└── #204 Tratar perda de conexão
-```
+A seleção do Superpowers contém somente `systematic-debugging`, `test-driven-development` e `verification-before-completion`. **Não instalamos seu plugin/framework completo.** As três skills novas são configuradas como explícitas: selecione a skill no Codex ou mencione, por exemplo, `$systematic-debugging`. Uma vez acionada, a skill segue suas próprias instruções. Verificar o trabalho continua sendo obrigatório mesmo sem carregar uma skill.
 
-### A Issue é o pacote de execução
+Não existe uma sequência automática Open Design → Impeccable → todas as outras ferramentas. Elas apoiam o agente que está trabalhando. Estar instalado não significa ser utilizado em cada tarefa; metadados e ferramentas ainda podem ter custo de contexto. [Como o Codex carrega skills](https://developers.openai.com/codex/skills).
 
-Sempre que possível, a própria GitHub Issue contém o necessário:
+## Instalar e começar
 
-```markdown
-## Objetivo
-O resultado que deve existir ao terminar.
+O instalador é voltado ao **macOS**, com Bash e Git disponíveis. O Codex deve estar instalado. Node/npm (`npx`) é usado somente pelos instaladores opcionais de Impeccable e Modern Web Guidance. Open Design precisa estar instalado para conectar seu MCP; não o baixamos automaticamente.
 
-## Contexto
-Somente o contexto necessário.
-
-## Escopo
-O que esta Issue cobre.
-
-## Critérios de aceitação
-- resultado A
-- resultado B
-
-## Fora de escopo
-O que deliberadamente fica para outra Issue.
-```
-
-O formato é uma orientação, não burocracia. Uma Issue simples pode ser muito menor.
-
-O workflow **não cria `task.md`, `plan.md`, handoff ou backlog paralelo** apenas para repetir a Issue.
-
-## Política de conversas
-
-Para evitar carregar histórico desnecessário:
-
-- prefira **uma conversa por Issue ou unidade coerente de trabalho**;
-- continue na mesma conversa enquanto a próxima ação depender materialmente do raciocínio, evidências ou decisões ainda ativos nela;
-- depois que a Issue/unidade terminar, prefira uma nova conversa para uma Issue independente;
-- não mantenha uma conversa longa apenas para “não perder contexto” quando GitHub Issues, OKF, código e Git já guardam o estado durável;
-- não crie documento de handoff apenas para transportar histórico da conversa.
-
-A conversa é contexto de trabalho temporário. O projeto é a fonte durável.
-
-## OKF e GitHub Issues
-
-O workflow mantém responsabilidades separadas:
-
-```text
-GitHub Issues = o que precisa ser feito
-OKF          = o que sabemos sobre o projeto
-```
-
-### Gate de escrita no OKF
-
-Não atualize OKF simplesmente porque uma tarefa terminou.
-
-Escreva ou altere OKF somente quando surgir ou mudar **conhecimento durável** que trabalho futuro precisa conhecer, como:
-
-- arquitetura;
-- decisão importante;
-- regra de domínio;
-- comportamento de integração;
-- restrição estável;
-- verdade relevante sobre o funcionamento do sistema.
-
-Não coloque em OKF:
-
-- progresso rotineiro;
-- status de tarefa;
-- narrativa de passos concluídos;
-- investigação temporária;
-- informação já representada adequadamente por Issue, PR ou código.
-
-Quando precisar atualizar, prefira o menor documento relevante em vez de reescrever grandes partes do conhecimento.
-
-Projetos existentes podem continuar usando seu OKF atual. O workflow não recria, converte ou duplica esse conteúdo sem necessidade.
-
-Especificação OKF: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
-
-## Review com contexto mínimo
-
-Terra não começa redescobrindo o projeto inteiro.
-
-O contexto inicial do reviewer deve ser, sempre que suficiente:
-
-```text
-Issue/requisitos
-+ diff concluído
-+ critérios de aceitação
-+ regras de projeto diretamente relevantes
-```
-
-Só depois ele abre código adicional, OKF, arquitetura, histórico ou módulos relacionados quando uma dependência, finding, contrato ou incerteza concreta exigir isso.
-
-Terra continua sendo usado somente quando o **review gate** disparar: segurança, dados persistentes, lógica financeira, concorrência/estado complexo, contratos públicos, infraestrutura, verificação fraca, incerteza do executor, múltiplas correções ou risco material antes de merge.
-
-## Ferramentas sob demanda
-
-Estar instalado **não significa participar de toda tarefa**.
-
-### Open Design
-
-Usado para descoberta visual, direção de UX/UI, protótipos e design system quando a tarefa realmente envolve design.
-
-Projeto: https://github.com/nexu-io/open-design
-
-### Impeccable
-
-Usado em trabalhos de interface quando auditoria, crítica, hardening ou polish visual/UX realmente agregar valor.
-
-Projeto: https://github.com/pbakaus/impeccable
-
-### Modern Web Guidance
-
-Usado pelo executor em trabalhos Web quando HTML, CSS, DOM, APIs do navegador, acessibilidade, compatibilidade ou performance forem relevantes. Recupera somente orientação específica para a tarefa.
-
-Projeto: https://github.com/GoogleChrome/modern-web-guidance
-
-### Superpowers — somente três skills
-
-O plugin completo não faz parte do workflow. A V1 usa apenas:
-
-- `systematic-debugging` — causa de bug não clara ou tentativas anteriores falharam;
-- `test-driven-development` — teste de regressão/falha realmente ajuda a provar comportamento;
-- `verification-before-completion` — antes de declarar uma tarefa concluída.
-
-Elas ficam instaladas como skills pessoais com invocação implícita desativada.
-
-Projeto: https://github.com/obra/superpowers
-
-## Instalação
-
-### Pré-requisitos
-
-- macOS;
-- Codex instalado e atualizado;
-- Git;
-- Node.js/npm (`npx`) para Impeccable e Modern Web Guidance;
-- Open Design instalado caso queira a integração de design.
-
-### 1. Clone
+### Primeira instalação
 
 ```bash
 git clone https://github.com/DBSN-code/simple-workflow.git
 cd simple-workflow
+bash install.sh --tools
 ```
 
-### 2. Instale
+`--tools` instala as regras e tenta preparar somente as ferramentas ausentes. No assistente do Modern Web Guidance, escolha **Codex + escopo global/usuário**. Instalações detectadas são reutilizadas, sem sobrescrever skills pessoais. Os instaladores externos rodam fora dos seus projetos; não instalamos hooks em cada projeto. O Open Design é conectado via seu CLI quando reconhecido; o comando `od` que já vem no macOS é outra ferramenta e não é usado por engano.
+
+Instaladores externos podem pedir interação e dependem da rede. **Confira os avisos:** regras instaladas não significam que todas as integrações foram confirmadas. As ferramentas mantêm suas licenças próprias.
+
+### Apenas instalar/atualizar as regras
 
 ```bash
-chmod +x install.sh
-./install.sh
+bash install.sh
 ```
 
-O instalador:
+Essa opção não acessa a rede nem reinstala ferramentas. Instala as instruções globais e faz a migração conservadora da versão anterior, quando reconhecida.
 
-1. cria backup do `~/.codex/AGENTS.md` atual, se existir;
-2. instala o workflow global em `~/.codex/AGENTS.md`;
-3. instala `executor` (Luna High), `executor_deep` (Luna xhigh) e `reviewer` (Terra High) em `~/.codex/agents/`;
-4. ajusta somente as chaves deste workflow em `~/.codex/config.toml`, preservando demais configurações;
-5. instala o perfil opcional `astra`;
-6. instala somente as três skills selecionadas do Superpowers;
-7. tenta instalar/configurar Impeccable, Modern Web Guidance e Open Design para Codex.
+O destino padrão é `~/.codex/AGENTS.md`; respeita `CODEX_HOME` quando definido. As skills pessoais usam `~/.agents/skills/`. Com `CODEX_HOME` personalizado, a integração MCP do Open Design deve ser conferida manualmente no destino correto.
 
-O script cria backups antes de substituir arquivos do Simple Workflow.
+Depois, **reabra o Codex e inicie uma conversa nova**, selecione modelo/esforço no cliente e converse normalmente. Para conferir sem modificar um projeto, peça:
 
-## Como começar a usar
+> Diga quais instruções do Simple Workflow você carregou. Confirme se a execução é nativa, sem encaminhamento obrigatório para agentes personalizados. Não altere arquivos.
 
-Depois da instalação, feche e abra novamente o Codex.
+As regras globais podem ser sobrepostas por `AGENTS.override.md` ou instruções locais do projeto. O instalador avisa sobre o override global, mas não o apaga. [Hierarquia oficial do AGENTS.md](https://developers.openai.com/codex/guides/agents-md).
 
 ### Projeto novo
 
-Abra o projeto no Codex e converse normalmente. O workflow global já estará ativo; não é necessário um prompt especial para cada tarefa.
+Abra a pasta do projeto no Codex e descreva o resultado. Por exemplo:
 
-Use **Sol Medium** por padrão. Plan Mode sobe Sol para **High**. Quando surgir arquitetura realmente ambígua, use **Astra Low** e **Medium** em Plan Mode.
+> Quero construir um sistema para organizar pedidos. Primeiro entenda o que preciso e proponha a abordagem em linguagem simples, antes de implementar.
 
 ### Projeto existente
 
-Na primeira conversa após adotar o workflow, use:
+Use uma vez, dentro do projeto:
 
-> Adote o Simple Workflow neste projeto. Preserve todo o conhecimento e contexto existentes, incluindo OKF, documentação, decisões, GitHub Issues e regras técnicas válidas. Identifique instruções/metodologias antigas de workflow que conflitam com o Simple Workflow e substitua somente essa parte. Não recrie nem duplique conhecimento existente.
+> Adote o Simple Workflow nativo neste projeto. Preserve código, histórico, OKF, documentação de design, decisões, Issues e regras técnicas. Remova somente instruções antigas que obriguem a divisão entre orquestrador, executor e revisor. Confira também os AGENTS.md locais, overrides, skills, hooks e configurações .codex que possam manter esse roteamento. Não recrie conhecimento nem altere configurações não relacionadas. Mostre o que mudou e o que foi preservado.
 
-Isso é uma **migração do processo**, não uma reinicialização do projeto.
+A adoção é uma mudança de processo, não uma reinicialização. **Atualizar regras globais não altera automaticamente todos os seus projetos.**
 
-Preserve conhecimento, histórico e regras técnicas. Reestruture apenas workflow conflitante e Issues ainda pendentes que estejam amplas ou ambíguas demais para o executor.
+## Atualizar quem usava a versão com Luna/Terra
 
-### Astra no CLI
-
-O instalador cria o perfil opcional:
+Na cópia local deste repositório:
 
 ```bash
-codex --profile astra
+git pull --ff-only
+bash install.sh
 ```
 
-## Comunicação com o usuário
+A atualização:
 
-O Simple Workflow assume que o usuário pode não ser desenvolvedor profissional.
+- troca as instruções antigas conhecidas pela orientação nativa;
+- desativa somente cópias exatas e reconhecidas dos antigos `executor.toml`, `executor_deep.toml` e `reviewer.toml`, com backup;
+- remove apenas os blocos exatos, não personalizados, de modelos/perfil Astra gerados pelo instalador anterior; preserva modelos pessoais, outros perfis, MCPs e permissões;
+- não reinstala nem remove Open Design, Impeccable, Modern Web Guidance ou as três skills selecionadas.
 
-O Codex deve:
+A partir desta versão, o conteúdo gerenciado no `AGENTS.md` fica entre marcadores; texto pessoal fora deles é preservado nas próximas atualizações.
 
-- conversar em português do Brasil por padrão;
-- usar linguagem simples antes do jargão;
-- explicar rapidamente termos técnicos importantes;
-- não repetir conceitos que o usuário já demonstrou entender;
-- explicar decisões em termos de consequência prática;
-- evitar despejar logs e detalhes internos sem necessidade;
-- no fechamento, incluir no máximo um pequeno `Para você aprender` quando houver algo realmente útil.
+**Arquivos antigos personalizados exigem cuidado.** Um `AGENTS.md` antigo modificado interrompe a instalação antes de sobrescrevê-lo. Peça ao Codex para mesclar suas regras com `codex/AGENTS.md` e delimitar apenas a parte do Simple Workflow com os marcadores `<!-- simple-workflow:begin -->` e `<!-- simple-workflow:end -->`, mantendo regras pessoais fora. Agentes personalizados, links simbólicos e configurações ambíguas são preservados com aviso, não apagados. Se o perfil Astra ainda estiver explicitamente selecionado no arquivo, ele é mantido; escolha outro perfil no Codex antes de removê-lo.
 
-## Estrutura do repositório
+Backups ficam em `~/.codex/simple-workflow-backups/` (ou no `CODEX_HOME` escolhido), em uma pasta por atualização. Para reverter, copie os arquivos dessa pasta de volta aos caminhos relativos dentro do seu `CODEX_HOME`. Não restaure uma configuração inteira se já fez alterações posteriores que deseja manter.
+
+Nenhuma migração modifica suas Issues, o OKF ou o código dos outros projetos. Não há script de instalação de dependências das aplicações.
+
+## Estrutura
 
 ```text
 simple-workflow/
 ├── README.md
 ├── install.sh
-└── codex/
-    ├── AGENTS.md
-    ├── astra.config.toml
-    ├── config.defaults.toml
-    └── agents/
-        ├── executor.toml
-        ├── executor_deep.toml
-        └── reviewer.toml
+├── codex/AGENTS.md
+├── scripts/migrate-config.awk
+└── tests/install.test.sh
 ```
 
-## Princípio central
+O script de migração existe apenas para retirar configurações legadas com segurança; não é um componente executado a cada conversa.
 
-> **Use o mínimo de processo e contexto necessário para concluir a tarefa com segurança.**
+### Validação do instalador
 
-Se uma ferramenta, agente, documento, conversa antiga ou etapa não muda a qualidade da decisão atual, ela não deve entrar no caminho apenas porque está disponível.
+```bash
+bash -n install.sh
+bash tests/install.test.sh
+```
+
+Os testes usam diretórios temporários e simulações dos instaladores externos, sem acessar a rede ou sua configuração pessoal. Os cenários legados leem o histórico Git local; use um clone com histórico, não apenas o ZIP. Eles verificam migração, backups, reinstalação, preservação de personalizações e seleção das ferramentas — **não validam o aplicativo Codex nem os serviços/modelos reais**. A instalação ponta a ponta no seu Mac ainda precisa ser conferida no cliente.
+
+> Menos repasses entre agentes e menos contexto desnecessário; a qualidade continua sendo demonstrada pela verificação do resultado.

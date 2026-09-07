@@ -1,7 +1,0 @@
-# Optional Simple Workflow profile for high-ambiguity architectural work.
-# install.sh merges this table into ~/.codex/config.toml.
-
-[profiles.astra]
-model = "gpt-6-astra"
-model_reasoning_effort = "low"
-plan_mode_reasoning_effort = "medium"
